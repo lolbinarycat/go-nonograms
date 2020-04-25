@@ -14,13 +14,13 @@ import (
 type NonogramData struct {
 	Name string
 	Width, Height int32
-	Colunms, Rows [][]int
+	Columns, Rows [][]int
 }
 
 func (data *NonogramData) CheckData() error {
 	switch {
-	case int32(len(data.Colunms)) != data.Width :
-		return errors.New(fmt.Sprintf("json error: number of colunms (%d) is not equal to width (%d)",len(data.Colunms),data.Width))
+	case int32(len(data.Columns)) != data.Width :
+		return errors.New(fmt.Sprintf("json error: number of columns (%d) is not equal to width (%d)",len(data.Columns),data.Width))
 	case int32(len(data.Rows)) != data.Height :
 		return errors.New(fmt.Sprintf("json error: number of rows (%d) is not equal to height (%d)",len(data.Rows),data.Height))
 	}
@@ -123,9 +123,19 @@ func drawNonogram(non NonogramData,screen tcell.Screen) {
 	for i, _ := range non.Rows {
 		for j , hint := range non.Rows[i] {
 			hintStr := strconv.Itoa(hint)
-			screen.SetCell(offset-len(non.Rows)+j,offset+i,style,rune(hintStr[0]))
+			screen.SetCell(offset+j-len(non.Rows[i]),offset+i+1,style,rune(hintStr[0]))
 		}
 	}
+
+	
+
+	for i, _ := range non.Columns {
+		for j , hint := range non.Columns[i] {
+			hintStr := strconv.Itoa(hint)
+			screen.SetCell(offset+i+1,offset+j-len(non.Columns[i]),style,rune(hintStr[0]))
+		}
+	}
+
 
 	screen.Show()
 }
