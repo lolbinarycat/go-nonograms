@@ -17,6 +17,8 @@ type NonogramData struct {
 	Columns, Rows [][]int
 }
 
+
+
 func (data *NonogramData) CheckData() error {
 	switch {
 	case int32(len(data.Columns)) != data.Width :
@@ -28,16 +30,51 @@ func (data *NonogramData) CheckData() error {
 	return nil
 }
 
+func MakeBoardState(data NonogramData) NonogramBoardState {
+	//i := data.Width
+
+	var nbs NonogramBoardState
+
+	nbs = make([][]NonogramCellState,data.Width + 1)
+
+	for i := range nbs {
+		nbs[i] = make([]NonogramCellState,data.Height + 1)
+		i--
+	}
+	return nbs
+}
+
+type NonogramBoardState [][]NonogramCellState
+	
+
+type NonogramCellState int
+
+const (
+	Empty NonogramCellState = iota + 1
+	Filled
+)
+
+
 var style = tcell.StyleDefault
 
+var stateRunes = [2]rune{ '0','\u2588' } //describes how to display board
+
 func main() {
+
+	
+	
 	nonogramFile, err := os.Open("test.json")
 	ec(err)
-	nonogramBytes, _ := ioutil.ReadAll(nonogramFile)
+	nonogramBytes, err := ioutil.ReadAll(nonogramFile)
+	ec(err)
 
 	var nonogramData NonogramData
+	
+	ec(json.Unmarshal(nonogramBytes,&nonogramData))
 	ec(nonogramData.CheckData())
-	json.Unmarshal(nonogramBytes,&nonogramData)
+
+	//fmt.Println(nonogramData)
+	//os.Exit(53)
 	
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	screen, err := tcell.NewScreen()
@@ -45,10 +82,16 @@ func main() {
 	err = screen.Init()
 	ec(err)
 
+	defer screen.Fini()
+
 	screen.SetStyle(tcell.StyleDefault.
 		Foreground(tcell.ColorWhite).
 		Background(tcell.ColorBlack))
 	screen.Clear()
+
+	//fmt.Println("\a")
+	
+	var nonogramBoardState NonogramBoardState = MakeBoardState(nonogramData) //make([][]NonogramCellState,10)
 
 	quit := make(chan struct{})
 	go func() {
@@ -80,7 +123,7 @@ func main() {
 		}
 	}()
 	
-	drawNonogram(nonogramData,screen)	
+	drawNonogram(nonogramData,nonogramBoardState,screen)	
 
 	screen.Show()
 
@@ -92,7 +135,7 @@ loop:
 		}
 	}
 
-	screen.Fini()
+	
 	
 }
 
@@ -105,16 +148,28 @@ func ec(err error) {
 	
 
 
-func drawNonogram(non NonogramData,screen tcell.Screen) {
+func drawNonogram(non NonogramData,nonState NonogramBoardState,screen tcell.Screen) {
 
-	i := int(non.Height)
+	defer screen.Show()
+
+	
+	i := int(non.Width)
 
 	offset := 5
 	
 	for i > 0 {
-		j := int(non.Width)
+		j := int(non.Height)
 		for j > 0 {
-			screen.SetCell(j+offset,i+offset,tcell.StyleDefault,'0')
+
+			runeToDraw := 'e'
+			
+			if len(nonState) >= i && len(nonState[i]) >= j {
+				runeToDraw = stateRunes[int(nonState[i][j])]
+			} else {
+				panic("error: nonogramBoardState is too short")
+			}
+			
+			screen.SetCell(i+offset,j+offset,tcell.StyleDefault,runeToDraw)
 			j--
 		}
 		i--
@@ -140,3 +195,9 @@ func drawNonogram(non NonogramData,screen tcell.Screen) {
 	screen.Show()
 }
 		
+/* func tryGetFromSlice(slice []interface{}, indexes ...int) (retrivedValue {
+	defer func() {
+
+	}()
+
+	slice[indexes[0]]  */
