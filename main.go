@@ -88,7 +88,7 @@ var (
 
 func main() {
 
-	nonogramFile, err := os.Open("test.json")
+	nonogramFile, err := os.Open(os.Args[1])
 	ec(err)
 	nonogramBytes, err := ioutil.ReadAll(nonogramFile)
 	ec(err)
